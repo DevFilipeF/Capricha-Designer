@@ -34,6 +34,22 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
+// Falha cedo e com uma mensagem útil: sem as variáveis de ambiente o app
+// ficaria com tela branca sem explicação. Em produção (Vercel) elas precisam
+// estar cadastradas em Project Settings > Environment Variables.
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  const missing = [
+    !SUPABASE_URL && 'VITE_SUPABASE_URL',
+    !SUPABASE_PUBLISHABLE_KEY && 'VITE_SUPABASE_PUBLISHABLE_KEY',
+  ].filter(Boolean).join(', ');
+
+  throw new Error(
+    `Configuração ausente: ${missing}. ` +
+    'Defina estas variáveis de ambiente no Vercel (Project Settings > Environment Variables) ' +
+    'e faça um novo deploy.',
+  );
+}
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   global: {
     fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
