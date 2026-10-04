@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 30 25% 97%;
+    --foreground: 30 10% 12%;
+
+    --card: 30 20% 99%;
+    --card-foreground: 30 10% 12%;
+
+    --popover: 30 20% 99%;
+    --popover-foreground: 30 10% 12%;
+
+    --primary: 340 65% 47%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 30 30% 92%;
+    --secondary-foreground: 30 10% 20%;
+
+    --muted: 30 15% 94%;
+    --muted-foreground: 30 8% 50%;
+
+    --accent: 25 80% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 340 65% 47%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 30 15% 96%;
+    --sidebar-foreground: 30 10% 20%;
+    --sidebar-primary: 340 65% 47%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 30 20% 92%;
+    --sidebar-accent-foreground: 30 10% 20%;
+    --sidebar-border: 30 15% 88%;
+    --sidebar-ring: 340 65% 47%;
+
+    --success: 152 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-sm;
+  }
+
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6;
+  }
+
+  .section-title {
+    @apply text-2xl font-semibold tracking-tight;
+    font-family: var(--font-display);
+  }
+}
