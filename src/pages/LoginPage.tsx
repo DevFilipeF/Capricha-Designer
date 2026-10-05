@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { ensureLocalAdmin, lockRemainingMinutes } from '@/lib/auth';
+import { lockRemainingMinutes } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 type Mode = 'admin' | 'user';
 
 export default function LoginPage() {
-  const { signIn, signInLocal, signOut } = useAuth();
+  const { signIn, signOut } = useAuth();
   const [mode, setMode] = useState<Mode>('admin');
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -31,32 +31,21 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      if (mode === 'admin') {
-        // Administrador: tenta a conta local do navegador e, se não existir,
-        // cai para a conta de administrador na nuvem.
-        await ensureLocalAdmin().catch(() => undefined);
-
-        const locked = lockRemainingMinutes();
-        if (locked > 0) {
-          setError(`Muitas tentativas. Tente novamente em ${locked} min.`);
-          return;
-        }
-
-        const local = await signInLocal(identifier, password);
-        if (!local.error) return;
-
-        const cloud = await signIn(identifier, password);
-        if (cloud.error) { setError(local.error); return; }
-        if (cloud.role !== 'admin') {
-          await signOut();
-          setError('Esta conta não tem acesso de administrador');
-          return;
-        }
+      // O login é sempre feito na nuvem (Supabase), para que os dados fiquem
+      // compartilhados entre navegadores e não dependam do IndexedDB local.
+      const locked = lockRemainingMinutes();
+      if (locked > 0) {
+        setError(`Muitas tentativas. Tente novamente em ${locked} min.`);
         return;
       }
 
-      const res = await signIn(identifier, password);
-      if (res.error) setError(res.error);
+      const cloud = await signIn(identifier, password);
+      if (cloud.error) { setError(cloud.error); return; }
+      if (mode === 'admin' && cloud.role !== 'admin') {
+        await signOut();
+        setError('Esta conta não tem acesso de administrador');
+        return;
+      }
     } finally {
       setLoading(false);
     }

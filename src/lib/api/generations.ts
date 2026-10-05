@@ -120,7 +120,7 @@ export async function saveGeneration(params: {
     .from('generations')
     .insert({
       created_by: uid,
-      status: 'done',
+      status: 'completed',
       input_snapshot: { ...params.inputSnapshot, filename: params.filename } as any,
       preset_snapshot: params.presetSnapshot as any,
       total_items: totalItems,

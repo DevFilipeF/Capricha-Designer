@@ -7,7 +7,7 @@ import { defaultLegacyConfig } from '@/lib/presetSchemaV2';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Upload, CheckCircle2, DownloadCloud } from 'lucide-react';
+import { Loader2, Upload, CheckCircle2, DownloadCloud, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,12 +16,14 @@ export default function ImportLocalDataPage() {
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [done, setDone] = useState(false);
+  const [failures, setFailures] = useState(0);
 
   const push = (line: string) => setLog(prev => [...prev, line]);
 
   const handleImport = async () => {
     setRunning(true);
     setLog([]);
+    setFailures(0);
     try {
       const [templates, fontes, presets] = await Promise.all([
         db.templates.toArray().catch(() => []),
@@ -47,6 +49,7 @@ export default function ImportLocalDataPage() {
           fontIdByName.set(f.nome, row.id);
           push(`Fonte importada: ${f.nome}`);
         } catch (e: any) {
+          setFailures(n => n + 1);
           push(`Fonte "${f.nome}" ignorada: ${e.message}`);
         }
       }
@@ -66,13 +69,18 @@ export default function ImportLocalDataPage() {
           templateIdByLocal.set(t.id!, { id: row.id, pageHeight: Number(row.page_height) });
           push(`Template importado: ${t.nome}`);
         } catch (e: any) {
+          setFailures(n => n + 1);
           push(`Template "${t.nome}" ignorado: ${e.message}`);
         }
       }
 
       for (const p of presets) {
         const target = templateIdByLocal.get(p.templateId);
-        if (!target) { push(`Preset "${p.nome}" ignorado (template não importado)`); continue; }
+        if (!target) {
+          setFailures(n => n + 1);
+          push(`Preset "${p.nome}" ignorado (template não importado)`);
+          continue;
+        }
         try {
           await createPreset({
             templateId: target.id,
@@ -86,6 +94,7 @@ export default function ImportLocalDataPage() {
           });
           push(`Preset importado: ${p.nome}`);
         } catch (e: any) {
+          setFailures(n => n + 1);
           push(`Preset "${p.nome}" ignorado: ${e.message}`);
         }
       }
@@ -101,6 +110,10 @@ export default function ImportLocalDataPage() {
   };
 
   const handleClearLocal = async () => {
+    if (failures > 0) {
+      toast.error(`Existem ${failures} item(ns) que não foram importados. Os dados locais foram preservados.`);
+      return;
+    }
     if (!confirm('Apagar definitivamente os dados locais deste navegador?')) return;
     await db.delete();
     toast.success('Dados locais removidos');
@@ -134,8 +147,17 @@ export default function ImportLocalDataPage() {
 
           {done && (
             <div className="flex items-center gap-3 pt-2">
-              <CheckCircle2 className="h-5 w-5 text-success" />
-              <Button variant="outline" onClick={handleClearLocal}>Limpar dados locais</Button>
+              {failures === 0
+                ? <CheckCircle2 className="h-5 w-5 text-success" />
+                : <AlertTriangle className="h-5 w-5 text-destructive" />}
+              <p className="text-xs text-muted-foreground flex-1">
+                {failures === 0
+                  ? 'Tudo importado. Você já pode limpar os dados locais.'
+                  : `${failures} item(ns) não foram importados. Resolva antes de limpar os dados locais.`}
+              </p>
+              <Button variant="outline" onClick={handleClearLocal} disabled={failures > 0}>
+                Limpar dados locais
+              </Button>
             </div>
           )}
         </CardContent>
